@@ -1,0 +1,34 @@
+# Personal data — never commit
+.env
+.env.local
+.env.*.local
+*.cookies
+cookies.json
+bookmarks*.json
+result/
+output/
+dumps/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node (in case anyone bundles this in the future)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Python (legacy from when this was a Python attempt)
+.venv/
+venv/
+__pycache__/
+*.pyc
+pyproject.toml
+uv.lock

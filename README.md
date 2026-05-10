@@ -27,17 +27,21 @@ The full debugging journey is in [`CHANGELOG.md`](CHANGELOG.md). TL;DR: **when t
    - Windows / Linux: `Ctrl + Shift + J`
 3. If X warns about pasting, type `allow pasting` and hit Enter
 4. Paste the contents of [`bookmarks_dumper.js`](bookmarks_dumper.js) into the console, hit Enter
-5. Run:
+5. Run **one** of:
    ```javascript
-   __dumper.autoScroll()
+   __dumper.autoResume()   // seamless: retries on stalls, snapshots, auto-saves
+   __dumper.autoScroll()   // simple: stops on first stall, manual save
    ```
-6. Wait for the "done" message (could be minutes or hours depending on count)
-7. Save:
+6. Wait for the "truly at end" or "done" message (could be minutes or hours)
+7. If you used `autoScroll`, save manually:
    ```javascript
    __dumper.download()
    ```
+   `autoResume` saves automatically when finished.
 
 A file like `bookmarks-2026-05-10.json` lands in your Downloads folder.
+
+> **Recommended for >1,000 bookmarks**: use `autoResume()`. It pauses 3 minutes when X stops responding, retries up to 3 times, and snapshots every 500 captures so you never lose progress to a tab crash.
 
 ---
 
@@ -74,10 +78,30 @@ Once the script is loaded, `window.__dumper` exposes:
 |---|---|
 | `__dumper.count` | Current count of captured bookmarks (live) |
 | `__dumper.all` | Array of all captured bookmarks |
-| `__dumper.autoScroll()` | Auto-scroll until no new bookmarks appear for 10 idle ticks |
-| `__dumper.stop()` | Halt auto-scroll early; keep what's captured |
+| `__dumper.autoResume(opts?)` | Seamless mode: scroll → stall → pause → retry → snapshot → repeat. Stops only at true end. Auto-saves. |
+| `__dumper.autoScroll(opts?)` | One-shot scroll. Stops at first prolonged stall. |
+| `__dumper.stop()` | Halt scrolling early; keep what's captured |
 | `__dumper.rescan()` | Re-parse currently rendered DOM (manual sweep) |
 | `__dumper.download(filename?)` | Save captured bookmarks as JSON to Downloads |
+
+### `autoResume(opts)` options
+
+| Option | Default | What it does |
+|---|---|---|
+| `pauseMinutes` | `3` | How long to wait between rounds when X stops loading |
+| `maxIdleRetries` | `3` | Number of consecutive empty rounds before declaring "truly at end" |
+| `snapshotEvery` | `500` | Auto-download a checkpoint JSON every N new captures |
+| `intervalMs` | `1200` | Scroll tick interval inside each round |
+| `maxStagnant` | `25` | Idle ticks per round before pausing |
+
+### `autoScroll(opts)` options
+
+| Option | Default |
+|---|---|
+| `intervalMs` | `1200` |
+| `maxStagnant` | `25` |
+| `snapshotEvery` | `0` (disabled) |
+| `onStop` | `null` (callback when scroll stops) |
 
 ---
 

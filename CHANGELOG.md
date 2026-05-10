@@ -4,6 +4,24 @@ All notable changes to this project are documented here. Format loosely follows 
 
 ---
 
+## [v3.1.0] — 2026-05-10
+
+Seamless mode for big collections.
+
+### Added
+- **`__dumper.autoResume(opts)`** — multi-round runner. Auto-scrolls, pauses on stalls, retries after a configurable wait, takes periodic snapshots, and only stops after N consecutive empty rounds (real end of feed). Auto-downloads the final JSON.
+- **Snapshot support in `autoScroll`** — pass `{ snapshotEvery: 500 }` to download a checkpoint every N captures. Loss-tolerant for huge dumps.
+- **Stop callback** — `autoScroll({ onStop })` for chaining (used internally by `autoResume`).
+
+### Changed
+- `autoScroll` default `maxStagnant`: **10 → 25**. Less false-positive stops when X is just slow to paginate.
+- `autoScroll` API now accepts an options object: `autoScroll({ intervalMs, maxStagnant, snapshotEvery, onStop })`. Old positional args still work for backwards compat.
+
+### Why
+Reports of the dumper stopping prematurely on collections with 1k+ bookmarks. Root cause: X paginates inconsistently — sometimes 10s between batches — and `maxStagnant: 10` declared "done" before X had a chance to load more. The fix is patience plus retry-with-pause for genuine rate limits.
+
+---
+
 ## [v3.0.0] — 2026-05-10
 
 The version that actually works.

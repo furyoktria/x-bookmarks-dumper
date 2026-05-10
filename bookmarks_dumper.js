@@ -1,10 +1,14 @@
-// Bookmarks dumper v3 — DOM mode
+// Bookmarks dumper v3.1 — DOM mode + seamless retry
 // Doesn't rely on fetches. Reads tweet data directly from the rendered DOM
 // as you scroll. Works even when X has bookmarks cached in memory.
 //
-// Usage:
+// Usage (seamless — recommended for large collections):
 //   1. Paste this whole file into the console on x.com/i/bookmarks
-//   2. __dumper.autoScroll()
+//   2. __dumper.autoResume()      ← retries stalls, snapshots, auto-saves
+//
+// Usage (simple, one-shot):
+//   1. Paste this file
+//   2. __dumper.autoScroll()      ← stops on first stall
 //   3. __dumper.download()
 
 (function () {
@@ -167,20 +171,32 @@
       return Array.from(bookmarks.values());
     },
 
-    autoScroll(intervalMs = 1200, maxStagnant = 10) {
+    autoScroll(opts = {}) {
+      // Backward compat: if called with positional args (intervalMs, maxStagnant)
+      if (typeof opts === "number") {
+        opts = { intervalMs: opts, maxStagnant: arguments[1] };
+      }
+      const {
+        intervalMs = 1200,
+        maxStagnant = 25,
+        snapshotEvery = 0, // 0 = disabled
+        onStop = null,
+      } = opts;
+
       if (scrollHandle) {
         console.log("[dumper] already scrolling.");
         return;
       }
       console.log(
-        `[dumper] auto-scrolling. Stops after ${maxStagnant} idle ticks.`,
+        `[dumper] auto-scrolling. Stops after ${maxStagnant} idle ticks${
+          snapshotEvery ? `, snapshot every ${snapshotEvery} captures` : ""
+        }.`,
       );
       let lastCount = bookmarks.size;
+      let lastSnapshot = bookmarks.size;
       let stagnant = 0;
       scrollHandle = setInterval(() => {
-        // scroll the window AND any element that has its own scrollbar
         window.scrollBy(0, window.innerHeight * 0.7);
-        // also force-capture in case observer missed something
         captureFromDOM();
         if (bookmarks.size === lastCount) {
           stagnant++;
@@ -188,16 +204,88 @@
             clearInterval(scrollHandle);
             scrollHandle = null;
             console.log(
-              `%c[dumper] done. Total: ${bookmarks.size}.`,
+              `%c[dumper] stopped. Total: ${bookmarks.size}. Run autoResume() for retry-with-pause, or download() to save.`,
               "color:#1d9bf0;font-weight:bold;font-size:13px",
             );
-            console.log("Run __dumper.download() to save.");
+            if (onStop) onStop();
           }
         } else {
           stagnant = 0;
           lastCount = bookmarks.size;
+
+          if (
+            snapshotEvery > 0 &&
+            bookmarks.size - lastSnapshot >= snapshotEvery
+          ) {
+            window.__dumper.download(
+              `bookmarks-checkpoint-${bookmarks.size}.json`,
+            );
+            lastSnapshot = bookmarks.size;
+          }
         }
       }, intervalMs);
+    },
+
+    // Seamless mode: keeps scrolling, auto-pauses on stalls, retries, snapshots,
+    // and only stops after N consecutive empty rounds (real end of feed).
+    async autoResume(opts = {}) {
+      const {
+        pauseMinutes = 3,
+        maxIdleRetries = 3,
+        snapshotEvery = 500,
+        intervalMs = 1200,
+        maxStagnant = 25,
+      } = opts;
+
+      console.log(
+        `%c[dumper] autoResume started — pause ${pauseMinutes}min between rounds, give up after ${maxIdleRetries} empty rounds.`,
+        "color:#1d9bf0;font-weight:bold",
+      );
+
+      let idleRetries = 0;
+      let round = 0;
+
+      while (idleRetries < maxIdleRetries) {
+        round++;
+        const before = bookmarks.size;
+        console.log(`[dumper] round ${round} starting (have ${before})`);
+
+        await new Promise((resolve) => {
+          this.autoScroll({
+            intervalMs,
+            maxStagnant,
+            snapshotEvery,
+            onStop: resolve,
+          });
+        });
+
+        const gained = bookmarks.size - before;
+        console.log(
+          `[dumper] round ${round} stopped: +${gained} new (total ${bookmarks.size})`,
+        );
+
+        if (gained === 0) {
+          idleRetries++;
+          if (idleRetries >= maxIdleRetries) {
+            console.log(
+              `%c[dumper] truly at end. Final: ${bookmarks.size}. Auto-saving.`,
+              "color:#1d9bf0;font-weight:bold;font-size:13px",
+            );
+            this.download();
+            return;
+          }
+          console.log(
+            `[dumper] empty round ${idleRetries}/${maxIdleRetries}. Pausing ${pauseMinutes}min before retry.`,
+          );
+        } else {
+          idleRetries = 0;
+          console.log(
+            `[dumper] gained ${gained}. Pausing ${pauseMinutes}min before next round.`,
+          );
+        }
+
+        await new Promise((r) => setTimeout(r, pauseMinutes * 60_000));
+      }
     },
 
     stop() {
@@ -236,9 +324,11 @@
   };
 
   console.log(
-    "%c[dumper v3 / DOM mode] ready ✓",
+    "%c[dumper v3.1 / DOM mode] ready ✓",
     "color:#1d9bf0;font-weight:bold;font-size:13px",
   );
   console.log("MutationObserver active. Currently captured:", bookmarks.size);
-  console.log("Next: __dumper.autoScroll()");
+  console.log("Two ways to run:");
+  console.log("  __dumper.autoResume()   ← seamless: retries on stalls, auto-snapshots, auto-saves at end");
+  console.log("  __dumper.autoScroll()   ← simple: stops on first stall");
 })();

@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Discussion / general question
+    url: https://github.com/furyoktria/x-bookmarks-dumper/discussions
+    about: For open-ended questions, ideas, or help. Bug reports → use the Bug template instead.

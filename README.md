@@ -137,6 +137,10 @@ jq 'reverse' bookmarks.json > bookmarks_oldest_first.json
 
 ---
 
+## Contributing
+
+Bug reports, fixes, and ideas are welcome. The flow is fork → branch → PR → merge — only the maintainer ([@furyoktria](https://github.com/furyoktria)) merges. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the step-by-step.
+
 ## License
 
 MIT — see [`LICENSE`](LICENSE).

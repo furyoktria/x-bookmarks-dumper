@@ -4,6 +4,10 @@ A tiny browser-console script to export **all your X (Twitter) bookmarks** to JS
 
 No API keys. No Python. No paid tier. Paste it into DevTools on `x.com/i/bookmarks`, scroll, download the JSON.
 
+<img src="docs/demo.gif" width="720" alt="DevTools console: the script loads, auto-scrolls, captures 60 bookmarks and saves them as JSON">
+
+<sub>A real run of the script against a local page of 60 fake bookmarks, so no real account is shown.</sub>
+
 ---
 
 ## Why I built this
@@ -13,7 +17,7 @@ X removed bookmarks from the official archive download. So if you want your own 
 1. Pay **$200/month** for the X API Basic tier
 2. Scrape it yourself
 
-I went down path 2 in May 2026. First I tried Python with [`twikit`](https://github.com/d60/twikit) — broke immediately on X's anti-bot transaction-ID generation. Then I tried hooking `fetch` from the browser console — captured zero, because X had already cached my bookmarks client-side and scrolling fired no network calls. Then I gave up on intercepting the network entirely and just read the rendered DOM. That worked.
+I went down path 2 in May 2026. First I tried Python with [`twikit`](https://github.com/d60/twikit), which broke immediately on X's anti-bot transaction-ID generation. Then I tried hooking `fetch` from the browser console. It captured nothing, because X had already cached my bookmarks client-side and scrolling fired no network calls. Then I gave up on intercepting the network entirely and just read the rendered DOM. That worked.
 
 The full debugging journey is in [`CHANGELOG.md`](CHANGELOG.md). TL;DR: **when the network layer is locked down, read the DOM.**
 
@@ -47,7 +51,7 @@ A file like `bookmarks-2026-05-10.json` lands in your Downloads folder.
 
 ## What you get
 
-Each bookmark in the output JSON looks like this:
+Each bookmark in the output JSON looks like this (a two-record file from the demo run is in [`examples/sample-output.json`](examples/sample-output.json)):
 
 ```json
 {
@@ -110,7 +114,7 @@ Once the script is loaded, `window.__dumper` exposes:
 - **Keep DevTools open.** Chrome throttles background tabs less when DevTools is attached.
 - **Don't switch tabs in Chrome** during auto-scroll. Switching apps (`⌘+Tab`) is fine; switching to another X tab freezes the dumper tab's timers.
 - **Big collections (10k+):** call `__dumper.download()` periodically as a snapshot. Auto-scroll keeps going. Insurance against tab crashes.
-- **Resume after rate-limit:** if scroll stops early, wait 5–10 minutes and run `__dumper.autoScroll()` again. It picks up from the current scroll position and deduplicates by ID.
+- **Resume after rate-limit:** if scroll stops early, wait 5 to 10 minutes and run `__dumper.autoScroll()` again. It picks up from the current scroll position and deduplicates by ID.
 
 ---
 
@@ -130,25 +134,25 @@ jq 'reverse' bookmarks.json > bookmarks_oldest_first.json
 
 ## Limitations
 
-- **Capture order is fixed** — X paginates newest-bookmarked first. There is no "start from oldest" parameter on their API. Sort post-hoc.
-- **No raw GraphQL payload** — DOM mode reads only what the UI renders. No `lang` field, no quoted-tweet trees, no precise view counts beyond the displayed `K`/`M` rounding.
+- **Capture order is fixed.** X paginates newest-bookmarked first. There is no "start from oldest" parameter on their API. Sort post-hoc.
+- **No raw GraphQL payload.** DOM mode reads only what the UI renders. No `lang` field, no quoted-tweet trees, no precise view counts beyond the displayed `K`/`M` rounding.
 - **x.com only** (or `twitter.com` if X ever resurrects the legacy domain).
-- **One-time dumps** — not designed for incremental sync. For recurring captures you'd want a server-side scraper, which is a different beast.
+- **One-time dumps.** Not designed for incremental sync. For recurring captures you'd want a server-side scraper, which is a different beast.
 
 ---
 
 ## Contributing
 
-Bug reports, fixes, and ideas are welcome. The flow is fork → branch → PR → merge — only the maintainer ([@furyoktria](https://github.com/furyoktria)) merges. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the step-by-step.
+Bug reports, fixes, and ideas are welcome. The flow is fork → branch → PR → merge, and only the maintainer ([@furyoktria](https://github.com/furyoktria)) merges. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the step-by-step.
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE).
+MIT. See [`LICENSE`](LICENSE).
 
 ---
 
 ## Author
 
-Built by [Furyoktria](https://github.com/furyoktria) in May 2026 because X's anti-bot stack defeated every easy path. Documenting the debugging journey here in case it saves someone else a few hours.
+Built by [Fury Oktria Putra](https://github.com/furyoktria) in May 2026 because X's anti-bot stack defeated every easy path. Documenting the debugging journey here in case it saves someone else a few hours.
 
-If this script breaks against future X changes, PRs welcome. The DOM selectors are the most likely thing to drift — see `parseArticle()` in [`bookmarks_dumper.js`](bookmarks_dumper.js).
+If this script breaks against future X changes, PRs welcome. The DOM selectors are the most likely thing to drift. See `parseArticle()` in [`bookmarks_dumper.js`](bookmarks_dumper.js).

@@ -1,0 +1,40 @@
+[
+  {
+    "id": "1800000000000000000",
+    "url": "https://x.com/sample_user_a/status/1800000000000000000",
+    "author": {
+      "username": "sample_user_a",
+      "name": "Sample User A"
+    },
+    "text": "Thread #1 on pricing pages: what worked, what did not, and the numbers.",
+    "created_at": "2026-01-03T00:00:00.000Z",
+    "stats": {
+      "replies": 3,
+      "retweets": 5,
+      "likes": 40,
+      "bookmarks": 2,
+      "views": 900
+    },
+    "media": [],
+    "outbound_urls": []
+  },
+  {
+    "id": "1800000000000007919",
+    "url": "https://x.com/sample_user_b/status/1800000000000007919",
+    "author": {
+      "username": "sample_user_b",
+      "name": "Sample User B"
+    },
+    "text": "Thread #2 on onboarding flows: what worked, what did not, and the numbers.",
+    "created_at": "2026-01-06T00:00:00.000Z",
+    "stats": {
+      "replies": 4,
+      "retweets": 8,
+      "likes": 137,
+      "bookmarks": 3,
+      "views": 2200
+    },
+    "media": [],
+    "outbound_urls": []
+  }
+]

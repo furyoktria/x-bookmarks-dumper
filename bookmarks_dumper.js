@@ -19,6 +19,18 @@
 
   const bookmarks = new Map();
 
+  // X moved bookmarks under /i/history (tabs: Bookmarks, Likes). Only read
+  // the page while the Bookmarks view is showing, so a click to another
+  // page or to the Likes tab never adds the wrong posts.
+  const startPath = location.pathname;
+  function onBookmarks() {
+    if (location.pathname !== startPath) return false;
+    const tab = [...document.querySelectorAll('[role="tab"]')].find(
+      (t) => t.getAttribute("aria-selected") === "true",
+    );
+    return !tab || /bookmark/i.test(tab.textContent || "");
+  }
+
   function parseStatNumber(s) {
     if (!s) return null;
     const m = String(s).match(/([\d.,]+)\s*([KMB])?/i);
@@ -131,6 +143,7 @@
   }
 
   function captureFromDOM() {
+    if (!onBookmarks()) return 0;
     const articles = document.querySelectorAll('article[data-testid="tweet"]');
     let added = 0;
     for (const article of articles) {
@@ -147,6 +160,18 @@
       );
     }
     return added;
+  }
+
+  if (!/^\/i\/(bookmarks|history)/.test(location.pathname)) {
+    console.log(
+      "%c[dumper] open https://x.com/i/bookmarks first (X now shows it under History > Bookmarks).",
+      "color:#f4212e;font-weight:bold",
+    );
+  } else if (!onBookmarks()) {
+    console.log(
+      "%c[dumper] select the Bookmarks tab first. The Likes tab is not bookmarks.",
+      "color:#f4212e;font-weight:bold",
+    );
   }
 
   // Initial capture (anything currently rendered)
@@ -195,7 +220,31 @@
       let lastCount = bookmarks.size;
       let lastSnapshot = bookmarks.size;
       let stagnant = 0;
+      let hiddenWarned = false;
       scrollHandle = setInterval(() => {
+        if (!onBookmarks()) {
+          clearInterval(scrollHandle);
+          scrollHandle = null;
+          console.log(
+            `%c[dumper] paused: you left the Bookmarks view. Kept ${bookmarks.size}. Go back to it and run autoScroll() again.`,
+            "color:#f4212e;font-weight:bold",
+          );
+          if (onStop) onStop();
+          return;
+        }
+        if (document.hidden) {
+          // X stops loading while the tab is in the background; waiting here
+          // keeps a hidden tab from being mistaken for the end of the list.
+          if (!hiddenWarned) {
+            console.log(
+              "%c[dumper] tab is in the background, so X stopped loading. Waiting; bring this tab to the front to continue.",
+              "color:#f4212e;font-weight:bold",
+            );
+            hiddenWarned = true;
+          }
+          return;
+        }
+        hiddenWarned = false;
         window.scrollBy(0, window.innerHeight * 0.7);
         captureFromDOM();
         if (bookmarks.size === lastCount) {
@@ -258,6 +307,8 @@
             onStop: resolve,
           });
         });
+
+        if (!onBookmarks()) return; // left the Bookmarks view: keep what we have, don't retry
 
         const gained = bookmarks.size - before;
         console.log(

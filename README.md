@@ -8,6 +8,10 @@ No API keys. No Python. No paid tier. Paste it into DevTools on `x.com/i/bookmar
 
 <sub>A real run of the script against a local page of 60 fake bookmarks, so no real account is shown.</sub>
 
+<a href="https://furyoktria.github.io/explainers/x-bookmarks-dumper/"><img src="docs/explainer-poster.jpg" width="100%" alt="Watch the 2:40 video tour of x-bookmarks-dumper: what it does, a map of the code, the life of a request, the core ideas and a real run"></a>
+
+**[Watch the 2:40 tour](https://furyoktria.github.io/explainers/x-bookmarks-dumper/)**: what it does, a map of the code, the life of a request, the core ideas and a real run.
+
 ---
 
 ## Why I built this
